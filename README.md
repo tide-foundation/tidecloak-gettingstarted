@@ -25,8 +25,8 @@ sudo docker run \
   -d \
   -v .:/opt/keycloak/data/h2 \
   -p 8080:8080 \
-  -e KEYCLOAK_ADMIN=admin \
-  -e KEYCLOAK_ADMIN_PASSWORD=password \
+  -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+  -e KC_BOOTSTRAP_ADMIN_PASSWORD=password \
   tideorg/tidecloak-dev:latest
 ```
 
@@ -192,7 +192,7 @@ export default IAMService;
   "private": false,
   "main": "src/index.js",
   "dependencies": {
-    "keycloak-js": "25.0.6",
+    "keycloak-js": "26.0.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "5.0.1"
