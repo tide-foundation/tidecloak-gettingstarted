@@ -1,5 +1,3 @@
-Get Started with TideCloak
-
 # Get Started with TideCloak
 
 So, you want to build the most secure digital platforms on the planet, without the burden of worrying about security? Great!
@@ -7,8 +5,6 @@ So, you want to build the most secure digital platforms on the planet, without t
 This developer guide will take you through the minimal steps to build your own Single-Page React application, secured with TideCloak -  **all in under 10 minutes** .
 
 TideCloak gives you a plug and play tool that incorporates all the concepts and technology discussed [in this series](https://tide.org/blog/rethinking-cybersecurity-for-developers). It allows you to manage your web users' roles and permissions - It's an adaptation of Redhat's open-source KeyCloak, one of the most robust, powerful and feature-rich Identity and Access Management system. But best of all it's secured by Tide's Cybersecurity Fabric so no-one holds the keys to the kingdom.
-
-
 
 ## Prerequisites
 
@@ -19,7 +15,6 @@ Before starting, make sure you have:
 * Internet connectivity
 
 For the purpose of this guide, we assume to run on a Debian linux host (either under Windows WSL or not).
-
 
 ## 1. Getting TideCloak up and running
 
@@ -266,6 +261,5 @@ There's two additional layers of protection you can configure through TideCloak:
 
 1. **Identity Governance:** Establish workflow processes ensuring that no compromised administrator can cause damage.
 2. **User walletization:** Ability to lock user data with unique user keys secured by Tide's Cybersecurity Fabric - so ownership and privacy can be guaranteed.
-
 
 ### **For early access to these features [Sign up for our Beta Program](https://tide.org/beta)**
