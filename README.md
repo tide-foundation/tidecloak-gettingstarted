@@ -62,7 +62,10 @@ MyProject/
 └── package.json
 ```
 
-Here's how:
+This can be done by **either**:
+1. Cloning this repository: `git clone https://github.com/tide-foundation/tidecloak-gettingstarted.git`
+2. Downloading and unzipping this repository from https://github.com/tide-foundation/tidecloak-gettingstarted/archive/refs/heads/main.zip
+3. Creating it from scratch by following these steps below:
 
 ### a. Create 3 folders:
 
