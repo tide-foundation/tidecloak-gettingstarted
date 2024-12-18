@@ -20,7 +20,7 @@ For the purpose of this guide, we assume to run on a Debian linux host (either u
 
 Start a TideCloak-Dev docker container that already includes all the basic configuration and settings to get you going. To get it, open your Docker/WSL/Linux terminal and run the following command:
 
-```
+```bash
 sudo docker run \
   -d \
   -v .:/opt/keycloak/data/h2 \
@@ -69,7 +69,7 @@ This can be done by **either**:
 
 ### a. Create 3 folders:
 
-```
+```bash
 mkdir -p MyProject/public
 mkdir -p MyProject/src
 cd MyProject
@@ -77,7 +77,7 @@ cd MyProject
 
 ### b. Create index.html via `nano public/index.html`
 
-```
+```html
 <!doctype html>
 <html lang="en">
   <head>
@@ -94,13 +94,13 @@ cd MyProject
 
 ### c. `nano public/silent-check-sso.html`
 
-```
+```html
 <html><body><script>parent.postMessage(location.href, location.origin)</script></body></html>
 ```
 
 ### d. `nano src/index.js`
 
-```
+```javascript
 import { createRoot } from "react-dom/client";
 import IAMService from "./IAMService";
 
@@ -136,7 +136,7 @@ IAMService.initIAM(renderApp);
 
 ### e. `nano src/IAMService.js`
 
-```
+```javascript
 import TideCloak from "keycloak-js";
 
 const _tc = new TideCloak({
@@ -188,7 +188,7 @@ export default IAMService;
 
 ### f. `nano package.json`
 
-```
+```json
 {
   "name": "tidecloak-react",
   "version": "1.0.0",
@@ -225,7 +225,7 @@ export default IAMService;
 
 Download and install all the dependencies for this project:
 
-```
+```bash
 npm install
 ```
 
@@ -233,7 +233,7 @@ npm install
 
 Build and run your project:
 
-```
+```bash
 npm start
 ```
 
