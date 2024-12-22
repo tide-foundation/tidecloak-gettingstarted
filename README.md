@@ -1,6 +1,6 @@
 # Get Started with TideCloak
 
-So, you want to build the most secure digital platforms on the planet, without the burden of worrying about security, and symultaniously grant your users sovereignty over their identities? Great!
+So, you want to build the most secure digital platforms on the planet, without the burden of worrying about security, and simultaneously grant your users sovereignty over their identities? Great!
 
 This developer guide will take you through the minimal steps to build your own Single-Page React application, secured with TideCloak -  **all in under 10 minutes** .
 
