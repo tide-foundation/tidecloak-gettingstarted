@@ -49,7 +49,7 @@ Within few seconds, you'll get your TideCloak host licenced and activated!
 Let's create the following simple React project structure:
 
 ```
-MyProject/
+tidecloak-gettingstarted/
 │
 ├── public/
 │   ├── index.html
@@ -70,9 +70,9 @@ This can be done by **either**:
 ### a. Create 3 folders:
 
 ```bash
-mkdir -p MyProject/public
-mkdir -p MyProject/src
-cd MyProject
+mkdir -p tidecloak-gettingstarted/public
+mkdir -p tidecloak-gettingstarted/src
+cd tidecloak-gettingstarted
 ```
 
 ### b. Create index.html via `nano public/index.html`
@@ -260,7 +260,7 @@ Let's review what just happened and what you've just accomplished:
 
 ## What next?
 
-There's two additional layers of protection you can configure through TideCloak:
+There are two additional layers of protection you can configure through TideCloak:
 
 1. **Identity Governance:** Establish workflow processes ensuring that no compromised administrator can cause damage.
 2. **User walletization:** Ability to lock user data with unique user keys secured by Tide's Cybersecurity Fabric - so ownership and privacy can be guaranteed.
