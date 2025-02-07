@@ -30,14 +30,14 @@ sudo docker run \
   tideorg/tidecloak-dev:latest
 ```
 
-This will take a minute or two, and when it's done, you'll be able to go to TideCloak's console at: [http://localhost:8080](http://localhost:8080/)
+This will take a **minute or two**, and when it's done, you'll be able to go to TideCloak's console at: [http://localhost:8080](http://localhost:8080/)
 
 ## 2. Activate your TideCloak license
 
 To get your TideCloak host to tap into Tide's Cybersecurity Fabric, you'll need to activate your license. Tide offers free developer license for up to 100 users. To do that, you'll need to:
 
 * Access your TideCloak administration console at [http://localhost:8080/admin/master/console/#/myrealm/identity-providers/tide/tide/settings](http://localhost:8080/admin/master/console/#/myrealm/identity-providers/tide/tide/settings)
-* Log in using your admin credentials (Username: admin, Password: password, if you haven't changed it) (You should be automatically navigated to: myrealm realm --> Identity Providers --> tide IdP --> Settings screen)
+* Log in using your admin credentials (Username: `admin`, Password: `password`, if you haven't changed it) (You should be automatically navigated to: myrealm realm --> Identity Providers --> tide IdP --> Settings screen)
 * Click on the `Manage License` button next to `License`
 * Click on the blue `Request License` button
 * Go through the checkout process by providing a contact email
@@ -195,7 +195,7 @@ export default IAMService;
   "private": false,
   "main": "src/index.js",
   "dependencies": {
-    "keycloak-js": "26.0.6",
+    "keycloak-js": "26.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "5.0.1"
@@ -244,7 +244,7 @@ All done!
 1. Go to [http://localhost:3000](http://localhost:3000/) You should see a "Hello!" message.
 2. Click on the `Login` button
 3. Click on `Create an account`
-4. Provide a new username, password, recovery email
+4. Provide a new username, password, recovery email(s)
 
 It will now show you that you're "Signed in" and it will show you your anonymous Tide username for this app.
 
