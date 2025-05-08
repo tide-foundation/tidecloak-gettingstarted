@@ -265,4 +265,4 @@ There are two additional layers of protection you can configure through TideCloa
 1. **Identity Governance:** Establish workflow processes ensuring that no compromised administrator can cause damage.
 2. **User walletization:** Ability to lock user data with unique user keys secured by Tide's Cybersecurity Fabric - so ownership and privacy can be guaranteed.
 
-### **For early access to these features [Sign up for our Beta Program](https://tide.org/beta)**
+### **For early access to these features [Sign up for our Alpha Program](https://tide.org/alpha)**
