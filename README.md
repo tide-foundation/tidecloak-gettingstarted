@@ -4,7 +4,7 @@ So, you want to build the most secure digital platforms on the planet, without t
 
 This developer guide will take you through the minimal steps to build your own Single-Page React application, secured with TideCloak -  **all in under 10 minutes** .
 
-TideCloak gives you a plug and play tool that incorporates all the concepts and technology discussed [in this series](https://tide.org/blog/rethinking-cybersecurity-for-developers). It allows you to manage your web users' roles and permissions - It's an adaptation of Redhat's open-source KeyCloak, one of the most robust, powerful and feature-rich Identity and Access Management system. But best of all it's secured by Tide's Cybersecurity Fabric so no-one holds the keys to the kingdom.
+TideCloak gives you a plug and play tool that incorporates all the concepts and technology discussed [in this series](https://tide.org/blog/rethinking-cybersecurity-for-developers). It allows you to manage your web users' roles and permissions - It's an adaptation of Redhat's open-source [Keycloak](https://keycloak.org), one of the most robust, powerful and feature-rich Identity and Access Management system. But best of all it's secured by Tide's Cybersecurity Fabric so no-one holds the keys to the kingdom.
 
 ## Prerequisites
 
@@ -46,62 +46,73 @@ Within few seconds, you'll get your TideCloak host licenced and activated!
 
 ## 3. Create your React JS project
 
-Let's create the following simple React project structure:
+### a. Create a React app using Vite
 
-```
-tidecloak-gettingstarted/
-│
-├── public/
-│   ├── index.html
-│   └── silent-check-sso.html
-│
-├── src/
-│   ├── index.js
-│   └── IAMService.js
-│
-└── package.json
-```
-
-This can be done by **either**:
-1. Cloning this repository: `git clone https://github.com/tide-foundation/tidecloak-gettingstarted.git`
-2. Downloading and unzipping this repository from https://github.com/tide-foundation/tidecloak-gettingstarted/archive/refs/heads/main.zip
-3. Creating it from scratch by following these steps below:
-
-### a. Create 3 folders:
+Run the following commands to create a new React app using [Vite](https://vitejs.dev/guide/#scaffolding-your-first-vite-project):
 
 ```bash
-mkdir -p tidecloak-gettingstarted/public
-mkdir -p tidecloak-gettingstarted/src
-cd tidecloak-gettingstarted
+npm create vite@latest tidecloak-react -- --template react-ts
+cd tidecloak-react
+npm install tidecloak-js
 ```
 
-### b. Create index.html via `nano public/index.html`
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>TideCloak Test React App</title>
-  </head>
-
-  <body>
-    <noscript> You need to enable JavaScript to run this app. </noscript>
-    <div id="root">Loading application...</div>
-  </body>
-</html>
-```
-
-### c. `nano public/silent-check-sso.html`
+### b. `nano public/silent-check-sso.html`
 
 ```html
 <html><body><script>parent.postMessage(location.href, location.origin)</script></body></html>
 ```
 
-### d. `nano src/index.js`
+### c. `nano src/main.tsx`
 
+Make the following changes:
+```diff
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
++ import IAMService from "./IAMService";
+- import App from './App.tsx'
+
++ const RenderOnAnonymous = ({ children }) => (!IAMService.isLoggedIn() ? children : null);
++
++ const RenderOnAuthenticated = ({ children }) => (IAMService.isLoggedIn() ? children : null);
++
++ const IsAllowedToViewProfile = () => (IAMService.hasOneRole("default-roles-myrealm") ? "Yes" : "No");
++
++ const App = () => (
++   <div>
++     <RenderOnAnonymous>
++       <div>
++         <h1>Hello!</h1>
++         <p>Please authenticate yourself!</p>
++         <p><button onClick={() => IAMService.doLogin()}>Login</button></p>
++       </div>
++     </RenderOnAnonymous>
++     <RenderOnAuthenticated>
++       <div>
++         <p>Signed in as <b>{IAMService.getName()}</b></p>
++         <p>Has Default Roles? <b>{IsAllowedToViewProfile()}</b></p>
++         <p><button onClick={() => IAMService.doLogout()}>Logout</button></p>
++       </div>
++     </RenderOnAuthenticated>
++   </div>
++ );
++ 
++ const renderApp = () => 
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
++ ;
++
++ IAMService.initIAM(renderApp);
+```
+
+So it looks like this:
 ```javascript
-import { createRoot } from "react-dom/client";
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
 import IAMService from "./IAMService";
 
 const RenderOnAnonymous = ({ children }) => (!IAMService.isLoggedIn() ? children : null);
@@ -129,99 +140,173 @@ const App = () => (
   </div>
 );
 
-const renderApp = () => createRoot(document.getElementById("root")).render(<App />);
+const renderApp = () => createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
 
 IAMService.initIAM(renderApp);
 ```
 
-### e. `nano src/IAMService.js`
+### d. `nano src/IAMService.js`
 
 ```javascript
-import TideCloak from "keycloak-js";
+import TideCloak from "tidecloak-js"
+import kcData from "/tidecloak.json";
 
-const _tc = new TideCloak({
-  url: "http://localhost:8080",
-  realm: "myrealm",
-  clientId: "mytest",
-});
+let _tc = null;
+ 
+function getTideCloakClient() {
+  if (!_tc) {
+    if ( Object.keys(kcData).length == 0 ) {
+	  console.error('[getTideCloakClient] tidecloak.json is empty. Web admin must download client adaptor from TideCloak.');
+    } else {
+      _tc = new TideCloak({
+        url: kcData['auth-server-url'],
+        realm: kcData['realm'],
+        clientId: kcData['resource'],
+        vendorId: kcData['vendorId'],
+        homeOrkUrl: kcData['homeOrkUrl']
+      });
+    }
+  }
+  return _tc;
+}
 
-const initIAM = (onAuthenticatedCallback) => {
-  _tc.init({
+const updateIAMToken = async () => {
+  const tidecloak = getTideCloakClient();
+  if (tidecloak) { await tidecloak.updateToken(300).then((refreshed) => {
+    if (refreshed) {
+      console.debug('[updateIAMToken] Token refreshed: '+ Math.round(tidecloak.tokenParsed.exp + tidecloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
+      if (! typeof window === "undefined" ) { 
+        document.cookie = `kcToken=${tidecloak.token}; path=/;`; 
+      };
+    } else {
+      console.debug('[updateIAMToken] Token not refreshed, valid for '
+        + Math.round(tidecloak.tokenParsed.exp + tidecloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
+    }
+  }).catch((err) => {
+    console.error('[updateIAMToken] Failed to refresh token', err);
+    throw err;
+  });}
+}
+
+const initIAM = (onReadyCallback) => {
+  const tidecloak = getTideCloakClient();
+  if (typeof window === "undefined") {
+    // We are on the server, do nothing
+    return;
+  }
+
+  if (!tidecloak) {  return; }
+  tidecloak.onTokenExpired = async () => { await updateIAMToken() };
+  if (!tidecloak.didInitialize) {
+    tidecloak.init({
       onLoad: "check-sso",
       silentCheckSsoRedirectUri: window.location.origin + "/silent-check-sso.html",
       pkceMethod: "S256",
     })
     .then((authenticated) => {
-      if (!authenticated) {
-        console.log("user is not authenticated..!");
+      // If authenticated, store the token in a cookie so the middleware can read it.
+      if (authenticated && tidecloak.token) {
+        document.cookie = `kcToken=${tidecloak.token}; path=/;`;
       }
-      onAuthenticatedCallback();
-      console.log("AccessToken is " + _tc.token);
+
+      if (onReadyCallback) {
+        onReadyCallback(authenticated);
+      }
     })
-    .catch(console.error);
+    .catch((err) => console.error("TideCloak init err:", err));
+  }else{
+    if (onReadyCallback) {
+      onReadyCallback(true);
+    }
+  }
+
 };
 
-const doLogin = _tc.login;
+const doLogin = () => {
+  const tidecloak = getTideCloakClient();
+  if (tidecloak) { tidecloak.login({redirectUri: window.location.origin + "/auth/redirect"}); }
+};
 
-const doLogout = _tc.logout;
+const doLogout = () => {
+  const tidecloak = getTideCloakClient();
+  // Clear the cookie so the server no longer sees the old token
+  document.cookie = "kcToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
-const isLoggedIn = () => !!_tc.token;
+  if (tidecloak) { tidecloak.logout({redirectUri: window.location.origin +"/auth/redirect" }); }
+};
 
-const updateToken = (successCallback) => _tc.updateToken(5).then(successCallback).catch(doLogin);
+const isLoggedIn = () => {
+  const tidecloak = getTideCloakClient();
+  if (!tidecloak) {  return null; }
+  return !!tidecloak.token;
+};
 
-const getName = () => _tc.tokenParsed?.preferred_username;
+const getToken = async () => {
+  const tidecloak = getTideCloakClient();
+  if (tidecloak) {
+    const tokenExp = getTokenExp();
+    if ( tokenExp < 3 ) {
+      try {
+        await updateIAMToken();
+        console.debug('Refreshed the token');
+      } catch (error) {
+        console.error('Failed to refresh the token', error);
+        tidecloak.logout();
+        return null;
+      }
+    }
+    return tidecloak.token ?? null;
+  }
+  return null;
+};
 
-const hasOneRole = (role) => _tc.hasRealmRole(role);
+const getName = () => {
+  const tidecloak = getTideCloakClient();
+  if (!tidecloak) {  return null; }
+  return tidecloak.tokenParsed?.preferred_username;
+};
+
+const getTokenExp = () => {
+  const tidecloak = getTideCloakClient();
+  if (!tidecloak) {  return null; }
+  return Math.round(tidecloak.tokenParsed?.exp + tidecloak.timeSkew - new Date().getTime() / 1000);
+};
+
+const hasOneRole = (role) => {
+  const tidecloak = getTideCloakClient();
+  if (!tidecloak) {  return null; }
+  return tidecloak.hasRealmRole(role);
+};
 
 const IAMService = {
   initIAM,
   doLogin,
   doLogout,
   isLoggedIn,
-  updateToken,
+  getToken,
   getName,
   hasOneRole,
+  getTokenExp,
 };
 
 export default IAMService;
 ```
 
-### f. `nano package.json`
+## 4. Export your TideCloak adapter
 
-```json
-{
-  "name": "tidecloak-react",
-  "version": "1.0.0",
-  "private": false,
-  "main": "src/index.js",
-  "dependencies": {
-    "keycloak-js": "26.1.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-scripts": "5.0.1"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
-}
-```
+Export your specific TideCloak settings and hardcode it in your project:
 
-## 4. Build your NPM environment
+1. Go to your [Clients](http://localhost:8080/admin/nextjs-test/console/#/myrealm/clients) menu → `mytest` client ID
+2. Update `Valid redirect URIs` to `http://localhost:5173/*`
+3. Update `Web origins` to `http://localhost:5173`
+4. In your [Clients](http://localhost:8080/admin/nextjs-test/console/#/myrealm/clients) menu → `mytest` client ID → `Action` dropdown → `Download adaptor configs` option (keep it as `keycloak-oidc-keycloak-json` format)
+5. `Download` or copy the details of that config and paste it in your project's root folder under `tidecloak.json`.
+
+## 5. Build your NPM environment
 
 Download and install all the dependencies for this project:
 
@@ -234,14 +319,14 @@ npm install
 Build and run your project:
 
 ```bash
-npm start
+npm run dev
 ```
 
 All done!
 
 ## 6. Play!
 
-1. Go to [http://localhost:3000](http://localhost:3000/) You should see a "Hello!" message.
+1. Go to [http://localhost:5173](http://localhost:5173/) You should see a "Hello!" message.
 2. Click on the `Login` button
 3. Click on `Create an account`
 4. Provide a new username, password, recovery email(s)
