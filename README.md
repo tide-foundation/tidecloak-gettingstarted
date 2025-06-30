@@ -300,10 +300,10 @@ export default IAMService;
 
 Export your specific TideCloak settings and hardcode it in your project:
 
-1. Go to your [Clients](http://localhost:8080/admin/nextjs-test/console/#/myrealm/clients) menu → `mytest` client ID
+1. Go to your [Clients](http://localhost:8080/admin/myrealm/console/#/myrealm/clients) menu → `mytest` client ID
 2. Update `Valid redirect URIs` to `http://localhost:5173/*`
 3. Update `Web origins` to `http://localhost:5173`
-4. In your [Clients](http://localhost:8080/admin/nextjs-test/console/#/myrealm/clients) menu → `mytest` client ID → `Action` dropdown → `Download adaptor configs` option (keep it as `keycloak-oidc-keycloak-json` format)
+4. In your [Clients](http://localhost:8080/admin/myrealm/console/#/myrealm/clients) menu → `mytest` client ID → `Action` dropdown → `Download adaptor configs` option (keep it as `keycloak-oidc-keycloak-json` format)
 5. `Download` or copy the details of that config and paste it in your project's root folder under `tidecloak.json`.
 
 ## 5. Build your NPM environment
