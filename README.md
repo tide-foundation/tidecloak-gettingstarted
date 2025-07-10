@@ -53,250 +53,11 @@ Run the following commands to create a new React app using [Vite](https://vitejs
 ```bash
 npm create vite@latest tidecloak-react -- --template react-ts
 cd tidecloak-react
-npm install tidecloak-js
+npm install @tidecloak/react
 ```
 
-### b. `nano public/silent-check-sso.html`
 
-```html
-<html><body><script>parent.postMessage(location.href, location.origin)</script></body></html>
-```
-
-### c. `nano src/main.tsx`
-
-Make the following changes:
-```diff
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-+ import IAMService from "./IAMService";
-- import App from './App.tsx'
-
-+ const RenderOnAnonymous = ({ children }) => (!IAMService.isLoggedIn() ? children : null);
-+
-+ const RenderOnAuthenticated = ({ children }) => (IAMService.isLoggedIn() ? children : null);
-+
-+ const IsAllowedToViewProfile = () => (IAMService.hasOneRole("default-roles-myrealm") ? "Yes" : "No");
-+
-+ const App = () => (
-+   <div>
-+     <RenderOnAnonymous>
-+       <div>
-+         <h1>Hello!</h1>
-+         <p>Please authenticate yourself!</p>
-+         <p><button onClick={() => IAMService.doLogin()}>Login</button></p>
-+       </div>
-+     </RenderOnAnonymous>
-+     <RenderOnAuthenticated>
-+       <div>
-+         <p>Signed in as <b>{IAMService.getName()}</b></p>
-+         <p>Has Default Roles? <b>{IsAllowedToViewProfile()}</b></p>
-+         <p><button onClick={() => IAMService.doLogout()}>Logout</button></p>
-+       </div>
-+     </RenderOnAuthenticated>
-+   </div>
-+ );
-+ 
-+ const renderApp = () => 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
-+ ;
-+
-+ IAMService.initIAM(renderApp);
-```
-
-So it looks like this:
-```javascript
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import IAMService from "./IAMService";
-
-const RenderOnAnonymous = ({ children }) => (!IAMService.isLoggedIn() ? children : null);
-
-const RenderOnAuthenticated = ({ children }) => (IAMService.isLoggedIn() ? children : null);
-
-const IsAllowedToViewProfile = () => (IAMService.hasOneRole("default-roles-myrealm") ? "Yes" : "No");
-
-const App = () => (
-  <div>
-    <RenderOnAnonymous>
-      <div>
-        <h1>Hello!</h1>
-        <p>Please authenticate yourself!</p>
-        <p><button onClick={() => IAMService.doLogin()}>Login</button></p>
-      </div>
-    </RenderOnAnonymous>
-    <RenderOnAuthenticated>
-      <div>
-        <p>Signed in as <b>{IAMService.getName()}</b></p>
-        <p>Has Default Roles? <b>{IsAllowedToViewProfile()}</b></p>
-        <p><button onClick={() => IAMService.doLogout()}>Logout</button></p>
-      </div>
-    </RenderOnAuthenticated>
-  </div>
-);
-
-const renderApp = () => createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
-
-IAMService.initIAM(renderApp);
-```
-
-### d. `nano src/IAMService.js`
-
-```javascript
-import TideCloak from "tidecloak-js"
-import kcData from "/tidecloak.json";
-
-let _tc = null;
- 
-function getTideCloakClient() {
-  if (!_tc) {
-    if ( Object.keys(kcData).length == 0 ) {
-	  console.error('[getTideCloakClient] tidecloak.json is empty. Web admin must download client adaptor from TideCloak.');
-    } else {
-      _tc = new TideCloak({
-        url: kcData['auth-server-url'],
-        realm: kcData['realm'],
-        clientId: kcData['resource'],
-        vendorId: kcData['vendorId'],
-        homeOrkUrl: kcData['homeOrkUrl']
-      });
-    }
-  }
-  return _tc;
-}
-
-const updateIAMToken = async () => {
-  const tidecloak = getTideCloakClient();
-  if (tidecloak) { await tidecloak.updateToken(300).then((refreshed) => {
-    if (refreshed) {
-      console.debug('[updateIAMToken] Token refreshed: '+ Math.round(tidecloak.tokenParsed.exp + tidecloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
-      if (! typeof window === "undefined" ) { 
-        document.cookie = `kcToken=${tidecloak.token}; path=/;`; 
-      };
-    } else {
-      console.debug('[updateIAMToken] Token not refreshed, valid for '
-        + Math.round(tidecloak.tokenParsed.exp + tidecloak.timeSkew - new Date().getTime() / 1000) + ' seconds');
-    }
-  }).catch((err) => {
-    console.error('[updateIAMToken] Failed to refresh token', err);
-    throw err;
-  });}
-}
-
-const initIAM = (onReadyCallback) => {
-  const tidecloak = getTideCloakClient();
-  if (typeof window === "undefined") {
-    // We are on the server, do nothing
-    return;
-  }
-
-  if (!tidecloak) {  return; }
-  tidecloak.onTokenExpired = async () => { await updateIAMToken() };
-  if (!tidecloak.didInitialize) {
-    tidecloak.init({
-      onLoad: "check-sso",
-      silentCheckSsoRedirectUri: window.location.origin + "/silent-check-sso.html",
-      pkceMethod: "S256",
-    })
-    .then((authenticated) => {
-      // If authenticated, store the token in a cookie so the middleware can read it.
-      if (authenticated && tidecloak.token) {
-        document.cookie = `kcToken=${tidecloak.token}; path=/;`;
-      }
-
-      if (onReadyCallback) {
-        onReadyCallback(authenticated);
-      }
-    })
-    .catch((err) => console.error("TideCloak init err:", err));
-  }else{
-    if (onReadyCallback) {
-      onReadyCallback(true);
-    }
-  }
-
-};
-
-const doLogin = () => {
-  const tidecloak = getTideCloakClient();
-  if (tidecloak) { tidecloak.login({redirectUri: window.location.origin + "/auth/redirect"}); }
-};
-
-const doLogout = () => {
-  const tidecloak = getTideCloakClient();
-  // Clear the cookie so the server no longer sees the old token
-  document.cookie = "kcToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-
-  if (tidecloak) { tidecloak.logout({redirectUri: window.location.origin +"/auth/redirect" }); }
-};
-
-const isLoggedIn = () => {
-  const tidecloak = getTideCloakClient();
-  if (!tidecloak) {  return null; }
-  return !!tidecloak.token;
-};
-
-const getToken = async () => {
-  const tidecloak = getTideCloakClient();
-  if (tidecloak) {
-    const tokenExp = getTokenExp();
-    if ( tokenExp < 3 ) {
-      try {
-        await updateIAMToken();
-        console.debug('Refreshed the token');
-      } catch (error) {
-        console.error('Failed to refresh the token', error);
-        tidecloak.logout();
-        return null;
-      }
-    }
-    return tidecloak.token ?? null;
-  }
-  return null;
-};
-
-const getName = () => {
-  const tidecloak = getTideCloakClient();
-  if (!tidecloak) {  return null; }
-  return tidecloak.tokenParsed?.preferred_username;
-};
-
-const getTokenExp = () => {
-  const tidecloak = getTideCloakClient();
-  if (!tidecloak) {  return null; }
-  return Math.round(tidecloak.tokenParsed?.exp + tidecloak.timeSkew - new Date().getTime() / 1000);
-};
-
-const hasOneRole = (role) => {
-  const tidecloak = getTideCloakClient();
-  if (!tidecloak) {  return null; }
-  return tidecloak.hasRealmRole(role);
-};
-
-const IAMService = {
-  initIAM,
-  doLogin,
-  doLogout,
-  isLoggedIn,
-  getToken,
-  getName,
-  hasOneRole,
-  getTokenExp,
-};
-
-export default IAMService;
-```
-
-## 4. Export your TideCloak adapter
+### c. Export your TideCloak adapter
 
 Export your specific TideCloak settings and hardcode it in your project:
 
@@ -306,7 +67,105 @@ Export your specific TideCloak settings and hardcode it in your project:
 4. In your [Clients](http://localhost:8080/admin/myrealm/console/#/myrealm/clients) menu → `mytest` client ID → `Action` dropdown → `Download adaptor configs` option (keep it as `keycloak-oidc-keycloak-json` format)
 5. `Download` or copy the details of that config and paste it in your project's root folder under `tidecloak.json`.
 
-## 5. Build your NPM environment
+### b. `nano src/main.tsx`
+
+Make the following changes:
+```diff
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+- import App from './App.tsx'
++ import { TideCloakProvider, useTideCloak, Authenticated, Unauthenticated } from '@tidecloak/react'
++ import tidecloakConfig from "../tidecloak.json"
+
++ function UserInfo() {
++   const { logout, getValueFromIdToken, hasRealmRole } = useTideCloak();
++   const IsAllowedToViewProfile = () => (hasRealmRole("default-roles-myrealm") ? "Yes" : "No");
+
++   return (
++     <div>
++       <p>Signed in as <b>{getValueFromIdToken("preferred_username") ?? '…'}</b></p>
++       <p>Has Default Roles? <b>{IsAllowedToViewProfile()}</b></p>
++       <button onClick={logout}>Logout</button>
++     </div>
++   );
++  }
+
++ function Welcome() {
++   const { login } = useTideCloak();
++   return (
++     <div>
++       <h1>Hello!</h1>
++       <p>Please authenticate yourself!</p>
++       <p><button onClick={login}>Login</button></p>
++     </div>
++   );
++ }
+
+createRoot(document.getElementById('root')!).render(
++  <StrictMode>
++    <TideCloakProvider config={tidecloakConfig}>
++      <Authenticated>
++        <UserInfo/>
++      </Authenticated>
++      <Unauthenticated>
++        <Welcome/>
++      </Unauthenticated>
++    </TideCloakProvider>
+-    <App />
+  </StrictMode>,
+)
+
+```
+
+So it looks like this:
+```javascript
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import { TideCloakProvider, useTideCloak, Authenticated, Unauthenticated } from '@tidecloak/react'
+import tidecloakConfig from "../tidecloak.json"
+
+function UserInfo() {
+  const { logout, getValueFromIdToken, hasRealmRole } = useTideCloak();
+  const IsAllowedToViewProfile = () => (hasRealmRole("ddefault-roles-myrealm") ? "Yes" : "No");
+
+  return (
+    <div>
+      <p>Signed in as <b>{getValueFromIdToken("preferred_username") ?? '…'}</b></p>
+      <p>Has Default Roles? <b>{IsAllowedToViewProfile()}</b></p>
+      <button onClick={logout}>Logout</button>
+    </div>
+  );
+}
+
+function Welcome() {
+  const { login } = useTideCloak();
+  return (
+    <div>
+      <h1>Hello!</h1>
+      <p>Please authenticate yourself!</p>
+      <p><button onClick={login}>Login</button></p>
+    </div>
+  );
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <TideCloakProvider config={tidecloakConfig}>
+      <Authenticated>
+        <UserInfo/>
+      </Authenticated>
+      <Unauthenticated>
+        <Welcome/>
+      </Unauthenticated>
+    </TideCloakProvider>
+  </StrictMode>,
+)
+
+```
+
+## 4. Build your NPM environment
 
 Download and install all the dependencies for this project:
 
