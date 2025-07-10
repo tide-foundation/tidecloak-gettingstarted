@@ -1,4 +1,6 @@
-import { createRoot } from "react-dom/client";
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
 import IAMService from "./IAMService";
 
 const RenderOnAnonymous = ({ children }) => (!IAMService.isLoggedIn() ? children : null);
@@ -26,6 +28,10 @@ const App = () => (
   </div>
 );
 
-const renderApp = () => createRoot(document.getElementById("root")).render(<App />);
+const renderApp = () => createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
 
 IAMService.initIAM(renderApp);
