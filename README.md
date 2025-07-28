@@ -81,10 +81,10 @@ Export your specific TideCloak settings and hardcode it in your project:
 Make the following changes:
 
 ```diff
--import { StrictMode } from 'react'
--import { createRoot } from 'react-dom/client'
--import './index.css'
--- import App from './App.tsx'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+- import App from './App.tsx'
 + import { TideCloakContextProvider, useTideCloak, Authenticated, Unauthenticated } from '@tidecloak/react'
 + import tidecloakConfig from "../tidecloak.json"
 +
