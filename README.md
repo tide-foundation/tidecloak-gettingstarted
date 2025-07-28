@@ -54,7 +54,7 @@ Within few seconds, you'll get your TideCloak host licensed and activated!
 
 ## 3. Create your React JS project
 
-> **Note:** You can find deep dives on the provider props, hook return values, TypeScript types, and more in the [TideCloak React SDK docs](https://github.com/tide-foundation/tidecloak-js/blob/main/packages/tidecloak-js/blob/main/packages/tidecloak-react/README.md).
+> **Note:** You can find deep dives on the provider props, hook return values, TypeScript types, and more in the [TideCloak React SDK docs](https://github.com/tide-foundation/tidecloak-js/blob/main/packages/tidecloak-react/README.md).
 
 ### a. Create a React app using Vite
 
