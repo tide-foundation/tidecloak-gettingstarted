@@ -1,31 +1,73 @@
-# Get Started with TideCloak
+# Quickstart TideCloak App
 
-So, you want to build the most secure digital platforms on the planet, without the burden of worrying about security, and simultaneously grant your users sovereignty over their identities? Great!
+This developer-oriented guide will take you through the minimal steps to set up a development environment with a fully-functional TideCloak server, and build your first very-own Client-Server NextJS web application, secured with TideCloak - **all in 5 minutes**.
 
-*For more in-depth examples, advanced configuration options, and full API reference, refer to the [TideCloak React SDK docs](https://github.com/tide-foundation/tidecloak-js/blob/main/packages/tidecloak-react/README.md).*
+> 📖 This guide is also available on the [TideCloak docs site](<https://docs.tide.org/get-started/Tidecloak%20Quickstart>).
 
-This developer guide will take you through the minimal steps to build your own Single-Page React application, secured with TideCloak -  **all in under 10 minutes** .
-
-TideCloak gives you a plug and play tool that incorporates all the concepts and technology discussed [in this series](https://tide.org/blog/rethinking-cybersecurity-for-developers). It allows you to manage your web users' roles and permissions - It's an adaptation of Redhat's open-source [Keycloak](https://keycloak.org), one of the most robust, powerful and feature-rich Identity and Access Management system. But best of all it's secured by Tide's Cybersecurity Fabric so no-one holds the keys to the kingdom.
-
-## Prerequisites
-
-Before starting, make sure you have:
-
-* Docker installed and running on your machine
-* NPM installed
-* Internet connectivity
-
-For the purpose of this guide, we assume to run on a Debian linux host (either under Windows WSL or not).
+[![Watch the TideCloak App Quickstart on YouTube](.github/assets/quickstart-video.svg)](https://www.youtube.com/watch?v=dVpDUF_XJdw)
 
 ---
 
-## 1. Getting TideCloak up and running
+## Prerequisites
 
-Start a TideCloak-Dev docker container that already includes all the basic configuration and settings to get you going. To get it, open your Docker/WSL/Linux terminal and run the following command:
+<details>
+<summary><b>Docker</b> installed and running</summary>
+
+Here's an example on how to set up Docker on Debian 12 linux environment:
+
+```bash
+for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove -y $pkg; done
+
+sudo apt-get update
+
+sudo apt-get install -y ca-certificates curl gnupg
+
+sudo install -m 0755 -d /etc/apt/keyrings
+
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
+
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+</details>
+
+<details>
+<summary><b>Node.js</b>, <b>curl</b> and <b>jq</b> installed and updated</summary>
+
+Here's an example on how to install Node NPM on Debian 12 linux environment:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+
+sudo apt-get install -y nodejs curl jq
+
+sudo npm install -g npm@latest
+```
+
+</details>
+
+<details>
+<summary><b>Internet</b> connectivity</summary>
+
+Yeah... You'll have to sort it out yourself.
+
+</details>
+
+---
+
+## 1. Start TideCloak in Dev Mode
+
+Run a pre-configured Dev container:
 
 ```bash
 sudo docker run \
+  --name mytidecloak \
   -d \
   -v .:/opt/keycloak/data/h2 \
   -p 8080:8080 \
@@ -34,198 +76,59 @@ sudo docker run \
   tideorg/tidecloak-dev:latest
 ```
 
-This will take a **minute or two**, and when it's done, you'll be able to go to TideCloak's console at: [http://localhost:8080](http://localhost:8080/)
+<details>
+<summary>You don't need to worry about changing any of these settings</summary>
 
----
+But if you want, here's what those settings are for:
 
-## 2. Activate your TideCloak license
+* `--name`: setting name for the server
+* `-d`: run in the background
+* `-v`: map the database to local folder to make it persistant
+* `-p 8080:8080`: map host port
+* `KC_BOOTSTRAP_ADMIN_[USERNAME | PASSWORD]`: set admin credentials
 
-To get your TideCloak host to tap into Tide's Cybersecurity Fabric, you'll need to activate your license. Tide offers free developer license for up to 100 users. To do that, you'll need to:
+</details>
 
-* Access your TideCloak administration console at [http://localhost:8080/admin/master/console/#/myrealm/identity-providers/tide/tide/settings](http://localhost:8080/admin/master/console/#/myrealm/identity-providers/tide/tide/settings)
-* Log in using your admin credentials (Username: `admin`, Password: `password`, if you haven't changed it) (You should be automatically navigated to: myrealm realm --> Identity Providers --> tide IdP --> Settings screen)
-* Click on the `Manage License` button next to `License`
-* Click on the blue `Request License` button
-* Go through the checkout process by providing a contact email
+After few seconds, you'll be able to access the tide-console for your realm at `http://localhost:8080/realms/{realm}/tide-console/`.
 
-Within few seconds, you'll get your TideCloak host licensed and activated!
-
----
-
-## 3. Create your React JS project
-
-> **Note:** You can find deep dives on the provider props, hook return values, TypeScript types, and more in the [TideCloak React SDK docs](https://github.com/tide-foundation/tidecloak-js/blob/main/packages/tidecloak-react/README.md).
-
-### a. Create a React app using Vite
-
-Run the following commands to create a new React app using [Vite](https://vitejs.dev/guide/#scaffolding-your-first-vite-project):
+### Optional: Check TideCloak console logs
 
 ```bash
-npm create vite@latest tidecloak-react -- --template react-ts
-cd tidecloak-react
-npm install @tidecloak/react
-```
-
-### b. Export your TideCloak adapter
-
-Export your specific TideCloak settings and hardcode it in your project:
-
-1. Go to your [Clients](http://localhost:8080/admin/master/console/#/myrealm/clients) menu → `mytest` client ID
-2. Update `Valid redirect URIs` to `http://localhost:5173/*`
-3. Update `Web origins` to `http://localhost:5173`
-4. In your [Clients](http://localhost:8080/admin/master/console/#/myrealm/clients) menu → `mytest` client ID → `Action` dropdown → `Download adaptor configs` option (keep it as `keycloak-oidc-keycloak-json` format)
-5. `Download` or copy the details of that config and paste it in your project's root folder under `tidecloak.json`.
-
-### c. `nano src/main.tsx`
-
-Make the following changes:
-
-```diff
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-- import App from './App.tsx'
-+ import { TideCloakContextProvider, useTideCloak, Authenticated, Unauthenticated } from '@tidecloak/react'
-+ import tidecloakConfig from "../tidecloak.json"
-+
-+ function UserInfo() {
-+   const { logout, getValueFromIdToken, hasRealmRole } = useTideCloak();
-+   const IsAllowedToViewProfile = () => (hasRealmRole("default-roles-myrealm") ? "Yes" : "No");
-+
-+   return (
-+     <div>
-+       <p>Signed in as <b>{getValueFromIdToken("preferred_username") ?? '…'}</b></p>
-+       <p>Has Default Roles? <b>{IsAllowedToViewProfile()}</b></p>
-+       <button onClick={logout}>Logout</button>
-+     </div>
-+   );
-+  }
-+
-+ function Welcome() {
-+   const { login } = useTideCloak();
-+   return (
-+     <div>
-+       <h1>Hello!</h1>
-+       <p>Please authenticate yourself!</p>
-+       <p><button onClick={login}>Login</button></p>
-+     </div>
-+   );
-+ }
-+
- createRoot(document.getElementById('root')!).render(
-+  <StrictMode>
-+    <TideCloakContextProvider config={tidecloakConfig}>
-+      <Authenticated>
-+        <UserInfo/>
-+      </Authenticated>
-+      <Unauthenticated>
-+        <Welcome/>
-+      </Unauthenticated>
-+    </TideCloakContextProvider>
--    <App />
-  </StrictMode>,
-)
-```
-
-So it looks like this:
-
-```javascript
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import { TideCloakContextProvider, useTideCloak, Authenticated, Unauthenticated } from '@tidecloak/react'
-import tidecloakConfig from "../tidecloak.json"
-
-function UserInfo() {
-  const { logout, getValueFromIdToken, hasRealmRole } = useTideCloak();
-  const IsAllowedToViewProfile = () => (hasRealmRole("default-roles-myrealm") ? "Yes" : "No");
-
-  return (
-    <div>
-      <p>Signed in as <b>{getValueFromIdToken("preferred_username") ?? '…'}</b></p>
-      <p>Has Default Roles? <b>{IsAllowedToViewProfile()}</b></p>
-      <button onClick={logout}>Logout</button>
-    </div>
-  );
-}
-
-function Welcome() {
-  const { login } = useTideCloak();
-  return (
-    <div>
-      <h1>Hello!</h1>
-      <p>Please authenticate yourself!</p>
-      <p><button onClick={login}>Login</button></p>
-    </div>
-  );
-}
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <TideCloakContextProvider config={tidecloakConfig}>
-      <Authenticated>
-        <UserInfo/>
-      </Authenticated>
-      <Unauthenticated>
-        <Welcome/>
-      </Unauthenticated>
-    </TideCloakContextProvider>
-  </StrictMode>,
-)
+sudo docker logs mytidecloak -f
 ```
 
 ---
 
-## 4. Build your NPM environment
+## 2. Initialize the template project
 
-Download and install all the dependencies for this project:
+The initializer will automatically create the realm and clients on your TideCloak server. This includes the Tide IdP, license activation, first admin assignment and Quorum-Enforced Governance enablement.
 
 ```bash
+npm init @tidecloak/nextjs@latest my-app
+```
+
+Simply follow the instructions and use defaults if unsure.
+
+---
+
+## 3. Build and run the app
+
+```bash
+cd my-app
+
 npm install
-```
 
----
-
-## 5. Run your project
-
-Build and run your project:
-
-```bash
 npm run dev
 ```
 
-All done!
+---
+
+## 4. Have a play 🎉
+
+Access your app on [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 6. Play!
+**Done!** You've just deployed a TideCloak Dev server, activated your license, created and assigned the main admin, built and deployed your first TideCloak-protected app - and all in 5 minutes.
 
-1. Go to [http://localhost:5173](http://localhost:5173/) You should see a "Hello!" message.
-2. Click on the `Login` button
-3. Click on `Create an account`
-4. Provide a new username, password, recovery email(s)
-
-It will now show you that you're "Signed in" and it will show you your anonymous Tide username for this app.
-
----
-
-## Project recap
-
-Let's review what just happened and what you've just accomplished:
-
-1. You have programmed, compiled, built and deployed, from the ground-up, a fully-functional ReactJS Single-Page-Application (SPA).
-2. Web users can now sign up and sign in to your SPA, being served customized content to authenticated and unauthenticated users and based on their predefined roles.
-3. Your web users' roles and permissions are managed locally on your very own self-hosted instance of TideCloak - one of the most robust, powerful and feature-rich Identity and Access Management system which you have downloaded, installed, configured and deployed locally.
-4. Your web users enjoy fully-secured Tide accounts, with their identity and access-credentials sitting outside of anyone's reach.
-5. Your TideCloak instance is secured by the global Tide Cybersecurity Fabric that you have activated and licensed.
-
----
-
-## What next?
-
-There are two additional layers of protection you can configure through TideCloak:
-
-1. **Identity Governance:** Establish workflow processes ensuring that no compromised administrator can cause damage.
-2. **User walletization:** Ability to lock user data with unique user keys secured by Tide's Cybersecurity Fabric - so ownership and privacy can be guaranteed.
-
-### **For early access to these features [Sign up for our Alpha Program](https://tide.org/alpha)**
+You can find more information on this project's [Github repo](https://github.com/tide-foundation/tidecloak-js/tree/main/packages/tidecloak-create-nextjs#expanding-from-the-template) page.
